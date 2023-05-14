@@ -106,6 +106,16 @@ def run(
         # Second-stage classifier (optional)
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
 
+#------------------------------My Code-----------------------------------------------------------------------
+        img1 = cv2.imread(source)
+        imgName = source.split(".")[1].split("/")[2]
+        img2 = img1.copy()
+        op_path = "E:/Study/Sem 6/ArtificialIntelligence_01CT0616/Project/yolov5/outputs"
+        if(not os.path.exists(op_path)):
+            os.mkdir(op_path)
+        ads = ["../Ads/1.jpg","../Ads/2.jpg","../Ads/3.jpg","../Ads/4.jpg","../Ads/5.png"]
+#-----------------------------------------------------------------------------------------------------
+
         # Process predictions
         for i, det in enumerate(pred):  # per image
             seen += 1
@@ -122,6 +132,7 @@ def run(
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
+
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
@@ -133,36 +144,22 @@ def run(
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
+
+#------------------------------My Code-----------------------------------------------------------------------
+                    x = int(xyxy[0].numpy())
+                    y = int(xyxy[1].numpy())
+                    w = int(xyxy[2].numpy())
+                    h = int(xyxy[3].numpy())
+                    newAspectRatio = (w-x,h-y)
+                    
+                    ind = random.randint(0, 4)
+                    img = cv2.imread(ads[ind])
+                    mask = cv2.resize(img,(newAspectRatio[0],newAspectRatio[1]))
+                    img2[y:(y+mask.shape[0]), x:(x+mask.shape[1])] = mask
+                    img1 = img2.copy()
+#-----------------------------------------------------------------------------------------------------
+
                     if save_txt:  # Write to file
-                        op_path = "./outputs"
-                        ads = ["../Ads/1.jpg","../Ads/2.jpg","../Ads/3.jpg","../Ads/4.jpg","../Ads/5.png"]
-                        x = int(xyxy[0].numpy())
-                        y = int(xyxy[1].numpy())
-                        w = int(xyxy[2].numpy())
-                        h = int(xyxy[3].numpy())
-
-                        newAspectRatio = (w-x,h-y)
-
-                        print(x,y,w,h,newAspectRatio)
-
-                        img1 = cv2.imread(source)
-                        imgName = source.split(".")[1].split("/")[2]
-                        orientation = source.split(".")[1].split("/")[1][0]
-                        img2 = img1.copy()
-                        ind = random.randint(0, 5)
-                        img = cv2.imread(ads[ind])
-                        mask = cv2.resize(img,(newAspectRatio[0],newAspectRatio[1]))
-                        print(x,(x+mask.shape[0]), y,(y+mask.shape[1]),mask.shape)
-                        print(img2.shape)
-                        print(mask.shape)
-
-                        img2[x:(x+mask.shape[0]), y:(y+mask.shape[1])] = mask
-                        #cv2.imshow("img",img2)
-                        cv2.imwrite("opImg_{}_{}.jpg".format(orientation,imgName),img2)
-                        #cv2.waitKey(0)
-
-
-                        
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         with open(f'{txt_path}.txt', 'a') as f:
@@ -174,6 +171,14 @@ def run(
                         annotator.box_label(xyxy, label, color=colors(c, True))
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
+
+
+
+#------------------------------My Code-----------------------------------------------------------------------
+            cv2.imshow("img",img2)
+            cv2.imwrite(os.path.join(op_path,"opImg_{}.jpg").format(imgName),img2)
+            cv2.waitKey(0)
+#-----------------------------------------------------------------------------------------------------
 
             # Stream results
             im0 = annotator.result()
